@@ -1,0 +1,69 @@
+export const hook = {
+  slug: "use-page-leave",
+  title: "usePageLeave",
+  description: "Runs a callback when the user's cursor leaves the browser window.",
+  category: "dom",
+  signature: "usePageLeave(handler)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Useful for exit-intent prompts, save reminders, and lightweight retention UI
+  that should appear when a pointer leaves the viewport.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+export function usePageLeave(handler: (event: MouseEvent) => void) {
+  const handlerRef = React.useRef(handler);
+
+  React.useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
+
+  React.useEffect(() => {
+    function handleMouseOut(event: MouseEvent) {
+      if (event.relatedTarget === null) {
+        handlerRef.current(event);
+      }
+    }
+
+    document.addEventListener("mouseout", handleMouseOut);
+    return () => document.removeEventListener("mouseout", handleMouseOut);
+  }, []);
+}
+```
+
+## Usage
+
+```tsx
+import * as React from "react";
+import { usePageLeave } from "./use-page-leave";
+
+export function ExitIntentPrompt() {
+  const [open, setOpen] = React.useState(false);
+
+  usePageLeave(() => {
+    setOpen(true);
+  });
+
+  return open ? (
+    <div role="dialog" aria-modal="true">
+      <p>You have unsaved changes.</p>
+      <button type="button" onClick={() => setOpen(false)}>
+        Stay here
+      </button>
+    </div>
+  ) : null;
+}
+```
+
+## API
+
+- `handler` runs when the pointer leaves the browser viewport.
+- The latest handler is kept in a ref, so listener setup stays stable.
+- Keyboard and touch navigation do not trigger this hook.

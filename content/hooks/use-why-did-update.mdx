@@ -1,0 +1,82 @@
+export const hook = {
+  slug: "use-why-did-update",
+  title: "useWhyDidUpdate",
+  description: "Logs which tracked values changed between renders.",
+  category: "dx",
+  signature: "useWhyDidUpdate(name, values)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this temporarily while debugging re-renders. It compares named values by
+  reference and logs the previous and current value for each change.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+type TrackedValues = Record<string, unknown>;
+
+export function useWhyDidUpdate(name: string, values: TrackedValues) {
+  const previousValuesRef = React.useRef<TrackedValues | null>(null);
+
+  React.useEffect(() => {
+    const previousValues = previousValuesRef.current;
+
+    if (previousValues) {
+      const changedValues: TrackedValues = {};
+      const keys = new Set([
+        ...Object.keys(previousValues),
+        ...Object.keys(values),
+      ]);
+
+      for (const key of keys) {
+        if (!Object.is(previousValues[key], values[key])) {
+          changedValues[key] = {
+            from: previousValues[key],
+            to: values[key],
+          };
+        }
+      }
+
+      if (Object.keys(changedValues).length > 0) {
+        console.log("[why-did-update]", name, changedValues);
+      }
+    }
+
+    previousValuesRef.current = values;
+  });
+}
+```
+
+## Usage
+
+```tsx
+import { useWhyDidUpdate } from "./use-why-did-update";
+
+type ProductCardProps = {
+  id: string;
+  selected: boolean;
+  price: number;
+};
+
+export function ProductCard(props: ProductCardProps) {
+  useWhyDidUpdate("ProductCard", props);
+
+  return (
+    <article aria-selected={props.selected}>
+      <p>{props.id}</p>
+      <p>{props.price}</p>
+    </article>
+  );
+}
+```
+
+## API
+
+- `name` labels the log entry.
+- `values` is an object of props, state, or derived values to compare.
+- Values are compared with `Object.is`, so object and function identity matters.

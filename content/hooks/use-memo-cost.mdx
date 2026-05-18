@@ -1,0 +1,69 @@
+export const hook = {
+  slug: "use-memo-cost",
+  title: "useMemoCost",
+  description: "Wraps useMemo and logs how long the memoized calculation takes.",
+  category: "dx",
+  signature: "const value = useMemoCost(name, factory, deps)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this to verify whether an expensive calculation is actually expensive
+  enough to justify memoization.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+export function useMemoCost<T>(
+  name: string,
+  factory: () => T,
+  deps: React.DependencyList,
+) {
+  return React.useMemo(() => {
+    const start = performance.now();
+    const value = factory();
+    const duration = performance.now() - start;
+
+    console.log(`[${name}] computed in ${duration.toFixed(2)}ms`);
+
+    return value;
+  }, deps);
+}
+```
+
+## Usage
+
+```tsx
+import { useMemoCost } from "./use-memo-cost";
+
+type User = {
+  id: string;
+  name: string;
+};
+
+export function UserList({ users }: { users: User[] }) {
+  const sortedUsers = useMemoCost(
+    "sortUsers",
+    () => [...users].sort((a, b) => a.name.localeCompare(b.name)),
+    [users],
+  );
+
+  return (
+    <ul>
+      {sortedUsers.map((user) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## API
+
+- `name` labels the log entry.
+- `factory` is the calculation passed through to `React.useMemo`.
+- `deps` controls when the calculation runs again.

@@ -1,0 +1,46 @@
+export const hook = {
+  slug: "use-render-count",
+  title: "useRenderCount",
+  description: "Returns how many times the current component has rendered.",
+  category: "dx",
+  signature: "const count = useRenderCount()",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this during performance debugging to spot noisy components and verify
+  whether memoization or state placement changes actually reduce renders.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+export function useRenderCount() {
+  const countRef = React.useRef(0);
+
+  countRef.current += 1;
+
+  return countRef.current;
+}
+```
+
+## Usage
+
+```tsx
+import { useRenderCount } from "./use-render-count";
+
+export function ProductRow() {
+  const count = useRenderCount();
+
+  return <span>renders: {count}</span>;
+}
+```
+
+## API
+
+- The return value starts at `1` on the first render.
+- The count is stored in a ref, so incrementing it does not cause another render.
+- Remove this hook from production UI unless the count is intentionally visible.

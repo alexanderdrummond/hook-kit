@@ -1,0 +1,69 @@
+export const hook = {
+  slug: "use-render-budget",
+  title: "useRenderBudget",
+  description: "Warns when a component renders too often within a time window.",
+  category: "dx",
+  signature: "useRenderBudget(name, options)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this temporarily while debugging runaway render loops, unstable props, or
+  effects that update state too often.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+type RenderBudgetOptions = {
+  maxRenders: number;
+  withinMs: number;
+};
+
+export function useRenderBudget(
+  name: string,
+  { maxRenders, withinMs }: RenderBudgetOptions,
+) {
+  const rendersRef = React.useRef<number[]>([]);
+
+  React.useEffect(() => {
+    const now = performance.now();
+    const windowStart = now - withinMs;
+
+    rendersRef.current = [
+      ...rendersRef.current.filter((timestamp) => timestamp >= windowStart),
+      now,
+    ];
+
+    if (rendersRef.current.length > maxRenders) {
+      console.warn(
+        `${name} re-rendered ${rendersRef.current.length}x in ${withinMs}ms`,
+      );
+    }
+  });
+}
+```
+
+## Usage
+
+```tsx
+import { useRenderBudget } from "./use-render-budget";
+
+export function SearchResults() {
+  useRenderBudget("SearchResults", {
+    maxRenders: 5,
+    withinMs: 1000,
+  });
+
+  return <div>Results</div>;
+}
+```
+
+## API
+
+- `name` labels the warning.
+- `maxRenders` is the allowed render count inside the window.
+- `withinMs` is the rolling time window used to count renders.
