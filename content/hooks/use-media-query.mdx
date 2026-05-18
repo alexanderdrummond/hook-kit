@@ -1,0 +1,56 @@
+export const hook = {
+  slug: "use-media-query",
+  title: "useMediaQuery",
+  description: "Subscribes to a CSS media query and returns whether it currently matches.",
+  category: "browser",
+  signature: "const matches = useMediaQuery(query)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Keep layout decisions in CSS when possible. Reach for this hook when component
+  behavior, data loading, or accessibility state depends on the same breakpoint.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+export function useMediaQuery(query: string) {
+  const [matches, setMatches] = React.useState(false);
+
+  React.useEffect(() => {
+    const mediaQueryList = window.matchMedia(query);
+
+    setMatches(mediaQueryList.matches);
+
+    function handleChange(event: MediaQueryListEvent) {
+      setMatches(event.matches);
+    }
+
+    mediaQueryList.addEventListener("change", handleChange);
+    return () => mediaQueryList.removeEventListener("change", handleChange);
+  }, [query]);
+
+  return matches;
+}
+```
+
+## Usage
+
+```tsx
+import { useMediaQuery } from "./use-media-query";
+
+export function NavigationMode() {
+  const isWide = useMediaQuery("(min-width: 768px)");
+
+  return isWide ? <DesktopNav /> : <MobileNav />;
+}
+```
+
+## API
+
+- `query` is any valid media query string accepted by `window.matchMedia`.
+- The return value updates when the browser reports a query change.

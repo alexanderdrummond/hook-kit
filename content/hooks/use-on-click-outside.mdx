@@ -1,0 +1,91 @@
+export const hook = {
+  slug: "use-on-click-outside",
+  title: "useOnClickOutside",
+  description: "Runs a handler when a pointer event starts outside an element.",
+  category: "browser",
+  signature: "useOnClickOutside(ref, handler)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Useful for closing popovers, menus, dialogs, and inline editors when the user
+  interacts elsewhere on the page.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+type EventName = "mousedown" | "touchstart";
+
+export function useOnClickOutside<T extends HTMLElement>(
+  ref: React.RefObject<T | null>,
+  handler: (event: MouseEvent | TouchEvent) => void,
+  eventName: EventName = "mousedown",
+) {
+  const handlerRef = React.useRef(handler);
+
+  React.useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
+
+  React.useEffect(() => {
+    function handleEvent(event: MouseEvent | TouchEvent) {
+      const element = ref.current;
+      const target = event.target;
+
+      if (!element || !(target instanceof Node) || element.contains(target)) {
+        return;
+      }
+
+      handlerRef.current(event);
+    }
+
+    document.addEventListener(eventName, handleEvent);
+    return () => document.removeEventListener(eventName, handleEvent);
+  }, [eventName, ref]);
+}
+```
+
+## Usage
+
+```tsx
+import * as React from "react";
+import { useOnClickOutside } from "./use-on-click-outside";
+
+export function Menu() {
+  const [open, setOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  useOnClickOutside(menuRef, () => {
+    setOpen(false);
+  });
+
+  return (
+    <div ref={menuRef}>
+      <button type="button" onClick={() => setOpen((value) => !value)}>
+        Options
+      </button>
+
+      {open ? (
+        <div role="menu">
+          <button type="button" role="menuitem">
+            Rename
+          </button>
+          <button type="button" role="menuitem">
+            Delete
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+```
+
+## API
+
+- `ref` points at the element that should be treated as inside.
+- `handler` runs only when the event target is outside the referenced element.
+- `eventName` defaults to `mousedown`; pass `touchstart` for touch-first behavior.

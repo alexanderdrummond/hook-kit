@@ -1,0 +1,52 @@
+export const hook = {
+  slug: "use-toggle",
+  title: "useToggle",
+  description: "A tiny boolean state helper for disclosure, switches, and local UI modes.",
+  category: "state",
+  signature: "const [value, toggle, setValue] = useToggle(defaultValue)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this when a component owns a simple on/off value and the caller should not
+  repeat callback state updates by hand.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+export function useToggle(defaultValue = false) {
+  const [value, setValue] = React.useState(defaultValue);
+
+  const toggle = React.useCallback(() => {
+    setValue((currentValue) => !currentValue);
+  }, []);
+
+  return [value, toggle, setValue] as const;
+}
+```
+
+## Usage
+
+```tsx
+import { useToggle } from "./use-toggle";
+
+export function Preferences() {
+  const [enabled, toggleEnabled] = useToggle(false);
+
+  return (
+    <button type="button" aria-pressed={enabled} onClick={toggleEnabled}>
+      {enabled ? "Enabled" : "Disabled"}
+    </button>
+  );
+}
+```
+
+## API
+
+- `defaultValue` sets the initial boolean state.
+- `toggle` flips the current value with a stable callback.
+- `setValue` is exposed for explicit controlled transitions.

@@ -1,0 +1,70 @@
+export const hook = {
+  slug: "use-scroll-direction",
+  title: "useScrollDirection",
+  description: "Returns whether the user is currently scrolling up or down.",
+  category: "browser",
+  signature: "const direction = useScrollDirection()",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Useful for sticky headers, compact toolbars, and controls that should hide
+  while the user scrolls down and return when they scroll up.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+type ScrollDirection = "up" | "down";
+
+export function useScrollDirection(threshold = 8) {
+  const [direction, setDirection] = React.useState<ScrollDirection>("up");
+  const lastScrollYRef = React.useRef(0);
+
+  React.useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+
+    function handleScroll() {
+      const currentScrollY = window.scrollY;
+      const difference = currentScrollY - lastScrollYRef.current;
+
+      if (Math.abs(difference) < threshold) {
+        return;
+      }
+
+      setDirection(difference > 0 ? "down" : "up");
+      lastScrollYRef.current = currentScrollY;
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [threshold]);
+
+  return direction;
+}
+```
+
+## Usage
+
+```tsx
+import { useScrollDirection } from "./use-scroll-direction";
+
+export function StickyNav() {
+  const direction = useScrollDirection();
+
+  return (
+    <header data-hidden={direction === "down"}>
+      <nav>Navigation</nav>
+    </header>
+  );
+}
+```
+
+## API
+
+- `threshold` controls how many pixels the page must move before direction changes.
+- The return value is `"up"` or `"down"`.
+- The hook listens with a passive scroll handler and cleans up on unmount.

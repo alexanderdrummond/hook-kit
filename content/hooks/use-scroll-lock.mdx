@@ -1,0 +1,77 @@
+export const hook = {
+  slug: "use-scroll-lock",
+  title: "useScrollLock",
+  description: "Locks document body scrolling while an overlay or modal is open.",
+  category: "browser",
+  signature: "useScrollLock(locked)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this for modals, drawers, command menus, and full-screen overlays where
+  the background should not scroll behind the active surface.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+export function useScrollLock(locked: boolean) {
+  React.useEffect(() => {
+    if (!locked) {
+      return;
+    }
+
+    const { overflow, paddingRight } = document.body.style;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = "hidden";
+
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      document.body.style.overflow = overflow;
+      document.body.style.paddingRight = paddingRight;
+    };
+  }, [locked]);
+}
+```
+
+## Usage
+
+```tsx
+import * as React from "react";
+import { useScrollLock } from "./use-scroll-lock";
+
+export function Modal() {
+  const [open, setOpen] = React.useState(false);
+
+  useScrollLock(open);
+
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Open modal
+      </button>
+
+      {open ? (
+        <div role="dialog" aria-modal="true">
+          <button type="button" onClick={() => setOpen(false)}>
+            Close
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
+}
+```
+
+## API
+
+- `locked` enables or disables body scroll locking.
+- The hook restores the previous `overflow` and `paddingRight` styles on cleanup.
+- Scrollbar width compensation helps avoid layout shift when the lock starts.

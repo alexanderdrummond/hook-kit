@@ -1,0 +1,84 @@
+export const hook = {
+  slug: "use-form-dirty",
+  title: "useFormDirty",
+  description: "Tracks whether form values differ from their initial values.",
+  category: "state",
+  signature: "const isDirty = useFormDirty(formValues, initialValues)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this to enable save buttons, show unsaved-change warnings, or guard route
+  transitions when a form has changed since it loaded.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+type FormValue = string | number | boolean | null | undefined;
+type FormValues = Record<string, FormValue>;
+
+export function useFormDirty<TValues extends FormValues>(
+  values: TValues,
+  initialValues: TValues,
+) {
+  return React.useMemo(() => {
+    const keys = new Set([
+      ...Object.keys(values),
+      ...Object.keys(initialValues),
+    ] as Array<keyof TValues>);
+
+    for (const key of keys) {
+      if (values[key] !== initialValues[key]) {
+        return true;
+      }
+    }
+
+    return false;
+  }, [values, initialValues]);
+}
+```
+
+## Usage
+
+```tsx
+import * as React from "react";
+import { useFormDirty } from "./use-form-dirty";
+
+const initialValues = {
+  name: "Ada",
+  email: "ada@example.com",
+};
+
+export function ProfileForm() {
+  const [formValues, setFormValues] = React.useState(initialValues);
+  const isDirty = useFormDirty(formValues, initialValues);
+
+  return (
+    <form>
+      <input
+        value={formValues.name}
+        onChange={(event) =>
+          setFormValues((values) => ({
+            ...values,
+            name: event.target.value,
+          }))
+        }
+      />
+
+      <button type="submit" disabled={!isDirty}>
+        Save changes
+      </button>
+    </form>
+  );
+}
+```
+
+## API
+
+- `values` are the current form values.
+- `initialValues` are the values to compare against.
+- The return value is `true` when any key has changed by strict equality.

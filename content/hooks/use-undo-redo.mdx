@@ -1,0 +1,120 @@
+export const hook = {
+  slug: "use-undo-redo",
+  title: "useUndoRedo",
+  description: "Adds undo and redo history to any local state value.",
+  category: "state",
+  signature: "const [state, setState, undo, redo] = useUndoRedo(initialValue)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this for editors, builders, filters, and small interactive tools where
+  users expect to step backward and forward through local changes.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+type HistoryState<T> = {
+  past: T[];
+  present: T;
+  future: T[];
+};
+
+export function useUndoRedo<T>(initialValue: T) {
+  const [history, setHistory] = React.useState<HistoryState<T>>({
+    past: [],
+    present: initialValue,
+    future: [],
+  });
+
+  const setState = React.useCallback((nextValue: React.SetStateAction<T>) => {
+    setHistory((currentHistory) => {
+      const resolvedValue =
+        typeof nextValue === "function"
+          ? (nextValue as (currentValue: T) => T)(currentHistory.present)
+          : nextValue;
+
+      if (Object.is(resolvedValue, currentHistory.present)) {
+        return currentHistory;
+      }
+
+      return {
+        past: [...currentHistory.past, currentHistory.present],
+        present: resolvedValue,
+        future: [],
+      };
+    });
+  }, []);
+
+  const undo = React.useCallback(() => {
+    setHistory((currentHistory) => {
+      const previousValue = currentHistory.past.at(-1);
+
+      if (previousValue === undefined) {
+        return currentHistory;
+      }
+
+      return {
+        past: currentHistory.past.slice(0, -1),
+        present: previousValue,
+        future: [currentHistory.present, ...currentHistory.future],
+      };
+    });
+  }, []);
+
+  const redo = React.useCallback(() => {
+    setHistory((currentHistory) => {
+      const nextValue = currentHistory.future[0];
+
+      if (nextValue === undefined) {
+        return currentHistory;
+      }
+
+      return {
+        past: [...currentHistory.past, currentHistory.present],
+        present: nextValue,
+        future: currentHistory.future.slice(1),
+      };
+    });
+  }, []);
+
+  return [history.present, setState, undo, redo] as const;
+}
+```
+
+## Usage
+
+```tsx
+import { useUndoRedo } from "./use-undo-redo";
+
+export function NotesEditor() {
+  const [note, setNote, undo, redo] = useUndoRedo("");
+
+  return (
+    <section>
+      <textarea
+        value={note}
+        onChange={(event) => setNote(event.target.value)}
+      />
+
+      <button type="button" onClick={undo}>
+        Undo
+      </button>
+      <button type="button" onClick={redo}>
+        Redo
+      </button>
+    </section>
+  );
+}
+```
+
+## API
+
+- `initialValue` is the first present state.
+- `setState` accepts either a value or an updater function.
+- `undo` moves the previous value into the present state when history exists.
+- `redo` restores the next value after an undo.

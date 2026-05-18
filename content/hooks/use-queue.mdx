@@ -1,0 +1,97 @@
+export const hook = {
+  slug: "use-queue",
+  title: "useQueue",
+  description: "Manages a FIFO queue with enqueue, dequeue, and peek helpers.",
+  category: "state",
+  signature: "const { enqueue, dequeue, peek, size } = useQueue<T>()",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this for task runners, notification stacks, upload batches, and any UI
+  flow where items should be processed in the order they arrived.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+export function useQueue<T>(initialItems: T[] = []) {
+  const [items, setItems] = React.useState(initialItems);
+
+  const enqueue = React.useCallback((item: T) => {
+    setItems((currentItems) => [...currentItems, item]);
+  }, []);
+
+  const dequeue = React.useCallback(() => {
+    let dequeuedItem: T | undefined;
+
+    setItems((currentItems) => {
+      dequeuedItem = currentItems[0];
+      return currentItems.slice(1);
+    });
+
+    return dequeuedItem;
+  }, []);
+
+  const peek = React.useCallback(() => {
+    return items[0];
+  }, [items]);
+
+  const clear = React.useCallback(() => {
+    setItems([]);
+  }, []);
+
+  return {
+    items,
+    size: items.length,
+    enqueue,
+    dequeue,
+    peek,
+    clear,
+  };
+}
+```
+
+## Usage
+
+```tsx
+import { useQueue } from "./use-queue";
+
+type Task = {
+  id: string;
+  title: string;
+};
+
+export function TaskQueue() {
+  const { enqueue, dequeue, peek, size } = useQueue<Task>();
+  const nextTask = peek();
+
+  return (
+    <section>
+      <p>Queued tasks: {size}</p>
+      <p>Next task: {nextTask?.title ?? "None"}</p>
+
+      <button
+        type="button"
+        onClick={() => enqueue({ id: crypto.randomUUID(), title: "Review" })}
+      >
+        Add task
+      </button>
+      <button type="button" onClick={dequeue}>
+        Complete next
+      </button>
+    </section>
+  );
+}
+```
+
+## API
+
+- `initialItems` seeds the queue.
+- `enqueue` adds an item to the back of the queue.
+- `dequeue` removes the first item and returns it when available.
+- `peek` returns the first item without removing it.
+- `size` is the current queue length.

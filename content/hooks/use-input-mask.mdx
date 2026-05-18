@@ -1,0 +1,119 @@
+export const hook = {
+  slug: "use-input-mask",
+  title: "useInputMask",
+  description: "Applies a live letter-and-digit mask to an input value.",
+  category: "input",
+  signature: "const maskedProps = useInputMask(mask)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this for predictable formats like UK vehicle registrations, where `A`
+  represents a letter and `#` represents a digit.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+function applyMask(value: string, mask: string) {
+  const characters = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let characterIndex = 0;
+  let result = "";
+
+  for (const character of mask) {
+    if (character === "#") {
+      const digit = findNextCharacter(characters, characterIndex, /\d/);
+
+      if (!digit) {
+        break;
+      }
+
+      result += digit.value;
+      characterIndex = digit.nextIndex;
+      continue;
+    }
+
+    if (character === "A") {
+      const letter = findNextCharacter(characters, characterIndex, /[A-Z]/);
+
+      if (!letter) {
+        break;
+      }
+
+      result += letter.value;
+      characterIndex = letter.nextIndex;
+      continue;
+    }
+
+    if (characterIndex >= characters.length) {
+      break;
+    }
+
+    result += character;
+  }
+
+  return result;
+}
+
+function findNextCharacter(value: string, startIndex: number, pattern: RegExp) {
+  for (let index = startIndex; index < value.length; index += 1) {
+    const character = value[index];
+
+    if (pattern.test(character)) {
+      return {
+        value: character,
+        nextIndex: index + 1,
+      };
+    }
+  }
+}
+
+export function useInputMask(mask: string, defaultValue = "") {
+  const [value, setValue] = React.useState(() => applyMask(defaultValue, mask));
+
+  const onChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setValue(applyMask(event.target.value, mask));
+    },
+    [mask],
+  );
+
+  React.useEffect(() => {
+    setValue((currentValue) => applyMask(currentValue, mask));
+  }, [mask]);
+
+  return {
+    value,
+    onChange,
+    autoCapitalize: "characters" as const,
+  };
+}
+```
+
+## Usage
+
+```tsx
+import { useInputMask } from "./use-input-mask";
+
+export function UkRegistrationField() {
+  const maskedProps = useInputMask("AA## AAA");
+
+  return (
+    <input
+      {...maskedProps}
+      type="text"
+      aria-label="UK vehicle registration"
+      placeholder="AB12 CDE"
+    />
+  );
+}
+```
+
+## API
+
+- `mask` is the display pattern. `A` slots are filled with letters and `#` slots are filled with digits.
+- `defaultValue` seeds the controlled input state.
+- The returned props include `value`, `onChange`, and `autoCapitalize`.

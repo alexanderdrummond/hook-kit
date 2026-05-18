@@ -1,0 +1,69 @@
+export const hook = {
+  slug: "use-debounce",
+  title: "useDebounce",
+  description: "Debounces a rapidly changing value until it has settled for a delay.",
+  category: "state",
+  signature: "const debounced = useDebounce(value, delay)",
+}
+
+<HookSignature>{hook.signature}</HookSignature>
+
+<HookNote>
+  Use this for search input, filters, resize-derived state, or any value that
+  changes faster than the work it triggers should run.
+</HookNote>
+
+## Code
+
+```tsx
+import * as React from "react";
+
+export function useDebounce<T>(value: T, delay: number) {
+  const [debouncedValue, setDebouncedValue] = React.useState(value);
+
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => clearTimeout(timeoutId);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+```
+
+## Usage
+
+```tsx
+import * as React from "react";
+import { useDebounce } from "./use-debounce";
+
+export function SearchField() {
+  const [query, setQuery] = React.useState("");
+  const debouncedQuery = useDebounce(query, 300);
+
+  React.useEffect(() => {
+    if (!debouncedQuery) {
+      return;
+    }
+
+    searchProducts(debouncedQuery);
+  }, [debouncedQuery]);
+
+  return (
+    <input
+      type="search"
+      value={query}
+      onChange={(event) => setQuery(event.target.value)}
+      placeholder="Search products"
+    />
+  );
+}
+```
+
+## API
+
+- `value` is the value that should be delayed.
+- `delay` is the number of milliseconds to wait after the latest change.
+- The return value keeps the previous value until the delay completes.
